@@ -1,0 +1,399 @@
+
+ <!DOCTYPE html>
+<html lang="en">
+    <head>
+     <meta charset="UTF-8">
+     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SSMA CONTROL PLATFORM</title>
+    <html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SSMA CONTROL PLATFORM</title>
+    
+    <!-- Fonts -->
+    <link href="https://cdn.jsdelivr.net/npm/@fontsource/syne@5.0.19/latin-400.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@fontsource/syne@5.0.19/latin-600.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@fontsource/syne@5.0.19/latin-800.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@fontsource/space-mono@5.0.19/latin-400.css" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- ========================================== -->
+    <!-- VIEW: LOGIN SCREEN                         -->
+    <!-- ========================================== -->
+    <section id="loginSection">
+        <div class="login-noise"></div>
+        
+        <div class="login-container">
+            <!-- Left Brand -->
+            <div class="login-left">
+                <div class="login-brand-top">
+                    <div class="brand-logo-mark">S</div>
+                    <div>
+                        <div class="brand-name">SSMA CONTROL</div>
+                        <div class="brand-sub">PLATFORM v5.0</div>
+                    </div>
+                </div>
+                
+                <div class="login-hero-text">
+                    <h1>Motor de Certificados <br><span>Em Escala.</span></h1>
+                    <p>Compile lotes de certificados personalizados com precisão milimétrica e sincronização em nuvem em tempo real.</p>
+                </div>
+
+                <div class="login-stats">
+                    <div class="stat-pill">
+                        <i class="ri-flash-line stat-icon" style="color:var(--amber)"></i>
+                        GERAÇÃO EM LOTE
+                    </div>
+                    <div class="stat-pill">
+                        <i class="ri-cloud-line stat-icon" style="color:var(--blue-bright)"></i>
+                        SYNC FIREBASE
+                    </div>
+                    <div class="stat-pill">
+                        <i class="ri-crosshair-2-line stat-icon" style="color:var(--green)"></i>
+                        AJUSTE VETORIAL
+                    </div>
+                </div>
+
+                <div class="login-version">
+                    SECURE NODE · 2026
+                </div>
+            </div>
+
+            <!-- Right Form -->
+            <div class="login-right">
+                <div class="login-form-inner">
+                    <div class="auth-tabs">
+                        <div class="auth-tab-indicator" id="tabIndicator"></div>
+                        <button type="button" class="auth-tab active" id="tabLogin" onclick="switchAuthTab('login')">Entrar</button>
+                        <button type="button" class="auth-tab" id="tabRegister" onclick="switchAuthTab('register')">Criar Conta</button>
+                    </div>
+
+                    <!-- Login Form -->
+                    <form id="formLogin" class="auth-form" onsubmit="return false;">
+                        <div class="form-header">
+                            <h2>Bem-vindo de volta</h2>
+                            <p>Acesse sua conta de operador</p>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">E-mail</label>
+                            <div class="field-wrap">
+                                <i class="ri-mail-line field-icon"></i>
+                                <input type="email" id="loginEmail" class="field" placeholder="nome@empresa.com" autocomplete="email">
+                            </div>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Senha</label>
+                            <div class="field-wrap">
+                                <i class="ri-lock-line field-icon"></i>
+                                <input type="password" id="loginPass" class="field" placeholder="••••••••" autocomplete="current-password">
+                                <button type="button" class="field-toggle-pass" onclick="togglePass('loginPass', this)">
+                                    <i class="ri-eye-off-line"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <button type="button" id="btnLogin" class="btn-primary" onclick="fazerLogin()">
+                            ACESSAR CONSOLE
+                        </button>
+                        <div id="loginError" class="auth-error hidden"></div>
+                    </form>
+
+                    <!-- Register Form -->
+                    <form id="formRegister" class="auth-form hidden" onsubmit="return false;">
+                        <div class="form-header">
+                            <h2>Criar Conta</h2>
+                            <p>Cadastre um novo operador no sistema</p>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Nome de Exibição</label>
+                            <div class="field-wrap">
+                                <i class="ri-user-line field-icon"></i>
+                                <input type="text" id="regName" class="field" placeholder="João da Silva" autocomplete="name">
+                            </div>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">E-mail</label>
+                            <div class="field-wrap">
+                                <i class="ri-mail-line field-icon"></i>
+                                <input type="email" id="regEmail" class="field" placeholder="nome@empresa.com" autocomplete="email">
+                            </div>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Senha (mínimo 6 caracteres)</label>
+                            <div class="field-wrap">
+                                <i class="ri-lock-line field-icon"></i>
+                                <input type="password" id="regPass" class="field" placeholder="••••••••" autocomplete="new-password">
+                                <button type="button" class="field-toggle-pass" onclick="togglePass('regPass', this)">
+                                    <i class="ri-eye-off-line"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <button type="button" id="btnRegister" class="btn-primary" onclick="fazerRegistro()">
+                            CRIAR OPERADOR
+                        </button>
+                        <div id="regError" class="auth-error hidden"></div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- VIEW: MAIN DASHBOARD                       -->
+    <!-- ========================================== -->
+    <div id="mainInterface" class="hidden">
+        
+        <!-- Admin Panel (Collapsible) -->
+        <div id="adminPanel" class="admin-panel hidden">
+            <div class="admin-panel-inner">
+                <div class="admin-panel-header">
+                    <div>
+                        <h3>Gestão de Operadores</h3>
+                        <p>Gerencie contas de acesso ao sistema via Firebase</p>
+                    </div>
+                    <div class="admin-panel-actions">
+                        <button class="btn-primary btn-sm" onclick="adicionarColaborador()">+ Adicionar</button>
+                        <button class="btn-primary btn-sm" style="background:var(--s2);border:1px solid var(--b2);color:var(--t2);" onclick="exportarDadosSistema()">📥 Exportar</button>
+                        <label class="btn-primary btn-sm" style="background:var(--s2);border:1px solid var(--b2);color:var(--t2);cursor:pointer;margin:0;">
+                            📤 Importar
+                            <input type="file" accept=".json" onchange="importarDadosSistema(this)" style="display:none;">
+                        </label>
+                        <button class="btn-primary btn-sm" onclick="toggleAdminPanel()">✕ Fechar</button>
+                    </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:24px;">
+                    <div>
+                         <h4 style="font-size:11px; font-weight:700; margin-bottom:8px; color:var(--t3); text-transform:uppercase;">Novo Operador</h4>
+                         <input type="text" id="newUserName" class="field" placeholder="Nome" style="margin-bottom:8px;">
+                         <input type="email" id="newUserEmail" class="field" placeholder="E-mail" style="margin-bottom:8px;">
+                         <input type="password" id="newUserPass" class="field" placeholder="Senha Provisória" style="margin-bottom:8px;">
+                    </div>
+                    <div>
+                        <div id="listaEquipe" class="team-list" style="padding-top:4px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Topbar -->
+        <header class="topbar">
+            <div class="topbar-left">
+                <div class="topbar-logo">SSMA<span>.</span></div>
+                <div class="topbar-divider"></div>
+                <div class="topbar-course">
+                    <span id="topbarCourse">NENHUM MÓDULO</span>
+                </div>
+            </div>
+            
+            <div class="topbar-center">
+                <div id="connectionStatus" class="conn-status conn-offline">
+                    <span class="conn-dot"></span>
+                    <span class="conn-text">OFFLINE</span>
+                </div>
+            </div>
+            
+            <div class="topbar-right">
+                <button id="adminBtn" class="tb-btn hidden" onclick="toggleAdminPanel()">
+                    <i class="ri-group-line"></i> Operadores
+                </button>
+                <button class="tb-btn tb-btn-red" onclick="fazerLogout()">
+                    <i class="ri-logout-box-r-line"></i> Sair
+                </button>
+                <div class="user-badge">
+                    <div id="userAvatar" class="user-avatar">?</div>
+                    <span id="userBadgeText">Carregando...</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- App Body -->
+        <div class="app-body">
+            
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <!-- Section 01: Modules -->
+                <div class="sb-section">
+                    <div class="sb-section-label">
+                        <span class="sb-num">01</span>
+                        <span>Módulos de Treinamento</span>
+                    </div>
+                    <div id="slotContainer" class="course-grid">
+                        <!-- JS injects buttons here -->
+                    </div>
+                </div>
+
+                <!-- Section 02: PDFs -->
+                <div class="sb-section">
+                    <div class="sb-section-label">
+                        <span class="sb-num">02</span>
+                        <span>Vetores de Background</span>
+                    </div>
+                    <label class="pdf-upload-card">
+                        <input type="file" accept=".pdf" onchange="processarPDF(this, 'frente')" style="display:none;">
+                        <div class="pdf-card-left">
+                            <span class="pdf-card-icon">📄</span>
+                            <div>
+                                <div class="pdf-card-name">Matriz Frente</div>
+                                <div id="statusFrente" class="pdf-card-status">AGUARDANDO PDF</div>
+                            </div>
+                        </div>
+                        <span id="dotFrente" class="pdf-dot"></span>
+                    </label>
+                    <label class="pdf-upload-card">
+                        <input type="file" accept=".pdf" onchange="processarPDF(this, 'verso')" style="display:none;">
+                        <div class="pdf-card-left">
+                            <span class="pdf-card-icon">📄</span>
+                            <div>
+                                <div class="pdf-card-name">Matriz Verso</div>
+                                <div id="statusVerso" class="pdf-card-status">AGUARDANDO PDF</div>
+                            </div>
+                        </div>
+                        <span id="dotVerso" class="pdf-dot"></span>
+                    </label>
+                </div>
+
+                <!-- Section 03: Sliders -->
+                <div class="sb-section">
+                    <div class="sb-section-label">
+                        <span class="sb-num">03</span>
+                        <span>Engenharia de Eixos</span>
+                    </div>
+                    
+                    <!-- Y Nome -->
+                    <div class="slider-card">
+                        <div class="slider-row">
+                            <span class="slider-name">Posição Nome (Y)</span>
+                            <span id="txt_y_nome" class="slider-val">105mm</span>
+                        </div>
+                        <input type="range" id="range_y_nome" min="0" max="200" oninput="ajusteReal(); setVal('txt_y_nome', this.value+'mm')">
+                        
+                        <div class="slider-row slider-row-sm">
+                            <span class="slider-name-sm">Fonte (pt)</span>
+                            <span id="txt_s_nome" class="slider-val-sm">26</span>
+                        </div>
+                        <input type="range" id="range_s_nome" min="8" max="60" oninput="ajusteReal(); setVal('txt_s_nome', this.value+'pt')">
+                    </div>
+
+                    <!-- Y CPF -->
+                    <div class="slider-card">
+                        <div class="slider-row">
+                            <span class="slider-name">Posição CPF (Y)</span>
+                            <span id="txt_y_cpf" class="slider-val">125mm</span>
+                        </div>
+                        <input type="range" id="range_y_cpf" min="0" max="200" oninput="ajusteReal(); setVal('txt_y_cpf', this.value+'mm')">
+                        
+                        <div class="slider-row slider-row-sm">
+                            <span class="slider-name-sm">Fonte (pt)</span>
+                            <span id="txt_s_cpf" class="slider-val-sm">14</span>
+                        </div>
+                        <input type="range" id="range_s_cpf" min="6" max="40" oninput="ajusteReal(); setVal('txt_s_cpf', this.value+'pt')">
+                    </div>
+
+                    <!-- Y Data -->
+                    <div class="slider-card">
+                        <div class="slider-row">
+                            <span class="slider-name">Posição Data (Y)</span>
+                            <span id="txt_y_data" class="slider-val">145mm</span>
+                        </div>
+                        <input type="range" id="range_y_data" min="0" max="200" oninput="ajusteReal(); setVal('txt_y_data', this.value+'mm')">
+                        
+                        <div class="slider-row slider-row-sm">
+                            <span class="slider-name-sm">Fonte (pt)</span>
+                            <span id="txt_s_data" class="slider-val-sm">12</span>
+                        </div>
+                        <input type="range" id="range_s_data" min="6" max="40" oninput="ajusteReal(); setVal('txt_s_data', this.value+'pt')">
+                    </div>
+
+                    <button class="btn-save-config" onclick="salvarConfig()">💾 Salvar Configuração</button>
+                </div>
+            </aside>
+
+            <!-- Main Content -->
+            <main class="main-content">
+                
+                <!-- Controls -->
+                <div class="preview-controls">
+                    <div class="preview-lens-group">
+                        <button id="btnPrevFrente" class="lens-btn lens-btn-active" onclick="mudarModoPreview('frente')">
+                            <span class="lens-dot lens-dot-a"></span> FRENTE
+                        </button>
+                        <button id="btnPrevVerso" class="lens-btn" onclick="mudarModoPreview('verso')">
+                            <span class="lens-dot lens-dot-b"></span> VERSO
+                        </button>
+                    </div>
+                    <div class="preview-hud">
+                        <span class="hud-dot"></span> VIEWPORT REALTIME
+                    </div>
+                </div>
+
+                <!-- Canvas Area -->
+                <div class="cert-frame">
+                    <canvas id="previewCanvas"></canvas>
+                    <div id="canvasEmptyMsg" class="canvas-empty-msg">
+                        <span class="empty-icon">📋</span>
+                        <span class="empty-title">Matriz Vetorial não Importada</span>
+                        <span class="empty-sub">Carregue um PDF de Frente ou Verso na sidebar para começar.</span>
+                    </div>
+                </div>
+
+                <!-- Info Bar -->
+                <div class="info-bar">
+                    <div class="info-bar-left">
+                        <div id="contagemAlunos" class="compile-count" style="font-family:var(--font-mono); color:var(--t3); font-size:10px;">AGUARDANDO DATASET</div>
+                        <div id="psbName" class="info-student-name">—</div>
+                        <div id="psbDetails" class="info-student-detail">Nenhum registro carregado</div>
+                    </div>
+                    <label class="btn-dataset">
+                        <i class="ri-file-excel-2-line"></i> Vincular Dataset .XLSX
+                        <input id="excelInput" type="file" accept=".xlsx,.xls" style="display:none;">
+                    </label>
+                </div>
+
+                <!-- Compile Block -->
+                <div class="compile-block">
+                    <div class="compile-status-row">
+                        <div class="compile-status-left">
+                            <span class="compile-label">STATUS DO MOTOR</span>
+                            <span id="statusMsg" class="compile-count">0 REGISTROS</span>
+                        </div>
+                        <span id="progressMsg" class="compile-pct">0%</span>
+                    </div>
+                    <div class="prog-track">
+                        <div id="progressBarFill" class="prog-fill"></div>
+                    </div>
+                    <button class="btn-compile" onclick="gerarLoteCompleto()">
+                        <i class="ri-rocket-2-fill"></i>
+                        EXECUTAR COMPILAÇÃO MASTER EM LOTE
+                    </button>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- SCRIPTS                                    -->
+    <!-- ========================================== -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <!-- Firebase Compat -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    
+    <script src="script.js"></script>
+</body>
+</html>
+
+
+
+          
