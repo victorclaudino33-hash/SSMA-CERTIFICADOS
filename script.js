@@ -1,4 +1,4 @@
-   /* ══════════════════════════════════════════════════════════════════════
+/* ══════════════════════════════════════════════════════════════════════
    SSMA CONTROL PLATFORM — script.js  v5.0
    Firebase Auth (e-mail/senha) + Firestore integrado.
    FIRESTORE COLLECTIONS:
@@ -271,7 +271,10 @@ function entrarInterface() {
     }
     
     inicializarSlots();
-    carregarConfigSliders(slotAtivo).then(() => ajusteReal());
+    Promise.all([
+        carregarConfigSliders(slotAtivo),
+        aplicarModeloCertificadoAtivo(slotAtivo)
+    ]).then(() => ajusteReal());
 }
 
 function fazerLogout() {
@@ -486,6 +489,7 @@ async function selecionarSlot(s, btn) {
     btn.setAttribute('aria-checked', 'true');
     document.getElementById('topbarCourse').textContent = s;
     await carregarConfigSliders(slotAtivo);
+    await aplicarModeloCertificadoAtivo(slotAtivo);
     ajusteReal();
     showToast('Módulo ' + s + ' carregado', 'info');
 }
@@ -524,12 +528,14 @@ function processarPDF(input, tipo) {
                 cvs.height     = viewport.height;
                 cvs.width      = viewport.width;
                 page.render({ canvasContext: ctx, viewport }).promise.then(() => {
-                    if (tipo === 'frente') imgFrente = cvs.toDataURL('image/png');
-                    else                   imgVerso  = cvs.toDataURL('image/png');
+                    const dataURL = cvs.toDataURL('image/png');
+                    if (tipo === 'frente') imgFrente = dataURL;
+                    else                   imgVerso  = dataURL;
+                    salvarModeloPDF(slotAtivo, tipo, dataURL);
                     if (statusEl) statusEl.innerText = 'ONLINE';
                     if (dotEl)    dotEl.classList.add('loaded');
                     ajusteReal();
-                    showToast('PDF de ' + tipo + ' carregado!', 'ok');
+                    showToast('PDF de ' + tipo + ' salvo no modelo ' + slotAtivo + '!', 'ok');
                 });
             });
         }).catch(() => {
@@ -722,3 +728,109 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+/* ══════════════════════════════════════════════════════════════════════
+   AUTO-SALVAR CAMPOS DO CERTIFICADO (NOVO — não altera nada acima)
+   A cada ajuste de slider (posição Y / tamanho de fonte de Nome, CPF ou
+   Data), a configuração é salva automaticamente para o certificado/módulo
+   ativo (slotAtivo), sem precisar clicar manualmente em "Salvar Configuração".
+   Usa debounce de 800ms: só salva quando o usuário pausa de arrastar,
+   evitando gravar a cada pixel movido.
+   ══════════════════════════════════════════════════════════════════════ */
+let _autoSaveCertificadoTimer = null;
+function autoSalvarCamposCertificado() {
+    clearTimeout(_autoSaveCertificadoTimer);
+    _autoSaveCertificadoTimer = setTimeout(async () => {
+        await salvarConfigSliders(slotAtivo);
+        showToast('Campos do ' + slotAtivo + ' salvos automaticamente', 'ok');
+    }, 800);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const idsCamposCertificado = [
+        'range_y_nome', 'range_s_nome',
+        'range_y_cpf',  'range_s_cpf',
+        'range_y_data', 'range_s_data'
+    ];
+    idsCamposCertificado.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('input', autoSalvarCamposCertificado);
+    });
+});
+
+/* ══════════════════════════════════════════════════════════════════════
+   MODELOS DE CERTIFICADO — PDF FRENTE/VERSO POR MÓDULO (NOVO)
+   Cada módulo (NR10, NR10 SEP, NR20, NR06, NR35, NR33, SGA, DIRECAO)
+   agora guarda o SEU PRÓPRIO PDF de frente/verso, salvo automaticamente
+   no momento do upload — exatamente igual já acontece com os sliders.
+   Ao trocar de módulo, o respectivo modelo é recarregado sozinho na tela.
+   Tenta salvar na nuvem (Firestore) e cai para localStorage se preciso
+   (mesmo padrão usado em salvarConfigSliders / carregarConfigSliders).
+   ══════════════════════════════════════════════════════════════════════ */
+let modelosPorCertificado = {}; // cache em memória: { NR10: { frente, verso } }
+
+function salvarModeloPDFLocal(curso, tipo, dataURL) {
+    try {
+        const local = JSON.parse(localStorage.getItem('ssma_modelos') || '{}');
+        local[curso] = local[curso] || {};
+        local[curso][tipo] = dataURL;
+        localStorage.setItem('ssma_modelos', JSON.stringify(local));
+    } catch (err) {
+        console.warn('Não foi possível salvar o modelo localmente (PDF muito grande para o navegador).', err);
+        showToast('Modelo salvo só nesta sessão (arquivo grande demais para o navegador).', 'erro');
+    }
+}
+
+async function salvarModeloPDF(curso, tipo, dataURL) {
+    modelosPorCertificado[curso] = modelosPorCertificado[curso] || {};
+    modelosPorCertificado[curso][tipo] = dataURL;
+
+    if (firebaseReady && db) {
+        try {
+            const patch = {};
+            patch[tipo] = dataURL;
+            patch.updatedAt = new Date().toISOString();
+            await db.collection('modelosCertificados').doc(curso).set(patch, { merge: true });
+            return;
+        } catch (err) {
+            console.warn('Falha ao salvar modelo na nuvem, usando localStorage.', err);
+        }
+    }
+    salvarModeloPDFLocal(curso, tipo, dataURL);
+}
+
+async function carregarModeloPDF(curso) {
+    if (modelosPorCertificado[curso]) return modelosPorCertificado[curso];
+
+    if (firebaseReady && db) {
+        try {
+            const snap = await db.collection('modelosCertificados').doc(curso).get();
+            if (snap.exists) {
+                modelosPorCertificado[curso] = snap.data();
+                return modelosPorCertificado[curso];
+            }
+        } catch (err) { /* cai para localStorage abaixo */ }
+    }
+
+    const local = JSON.parse(localStorage.getItem('ssma_modelos') || '{}');
+    if (local[curso]) {
+        modelosPorCertificado[curso] = local[curso];
+        return local[curso];
+    }
+    return null;
+}
+
+async function aplicarModeloCertificadoAtivo(curso) {
+    const modelo = await carregarModeloPDF(curso);
+    imgFrente = (modelo && modelo.frente) || null;
+    imgVerso  = (modelo && modelo.verso)  || null;
+
+    const statusFrente = document.getElementById('statusFrente');
+    const statusVerso  = document.getElementById('statusVerso');
+    const dotFrente     = document.getElementById('dotFrente');
+    const dotVerso      = document.getElementById('dotVerso');
+
+    if (statusFrente) statusFrente.innerText = imgFrente ? 'ONLINE' : 'AGUARDANDO PDF';
+    if (statusVerso)  statusVerso.innerText  = imgVerso  ? 'ONLINE' : 'AGUARDANDO PDF';
+    if (dotFrente) dotFrente.classList.toggle('loaded', !!imgFrente);
+    if (dotVerso)  dotVerso.classList.toggle('loaded', !!imgVerso);
+}
