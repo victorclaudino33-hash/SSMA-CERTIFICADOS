@@ -528,7 +528,9 @@ function processarPDF(input, tipo) {
                 cvs.height     = viewport.height;
                 cvs.width      = viewport.width;
                 page.render({ canvasContext: ctx, viewport }).promise.then(() => {
-                    const dataURL = cvs.toDataURL('image/png');
+                    // JPEG comprimido pesa 80-90% menos que PNG, deixando o site
+                    // mais leve e rápido (importação, troca de módulo e geração em lote)
+                    const dataURL = cvs.toDataURL('image/jpeg', 0.85);
                     if (tipo === 'frente') imgFrente = dataURL;
                     else                   imgVerso  = dataURL;
                     salvarModeloPDF(slotAtivo, tipo, dataURL);
@@ -640,7 +642,7 @@ async function gerarLoteCompleto() {
     
     for (let i = 0; i < dadosExcel.length; i++) {
         if (i > 0) doc.addPage();
-        doc.addImage(imgFrente, 'PNG', 0, 0, 297, 210);
+        doc.addImage(imgFrente, formatoImagem(imgFrente), 0, 0, 297, 210);
         doc.setTextColor(0, 0, 0);
         
         const p    = dadosExcel[i];
@@ -658,7 +660,7 @@ async function gerarLoteCompleto() {
         doc.text('Data: ' + formatarData(data), 148.5, yd, { align: 'center' });
         
         doc.addPage();
-        doc.addImage(imgVerso, 'PNG', 0, 0, 297, 210);
+        doc.addImage(imgVerso, formatoImagem(imgVerso), 0, 0, 297, 210);
         
         const pct = Math.round(((i + 1) / dadosExcel.length) * 100);
         if (pctMsg) pctMsg.innerText = pct + '%';
@@ -677,6 +679,10 @@ async function gerarLoteCompleto() {
 function buscarNaPlanilha(obj, termo) {
     const chave = Object.keys(obj).find(k => k.toLowerCase().includes(termo.toLowerCase()));
     return chave ? obj[chave] : '';
+}
+
+function formatoImagem(dataURL) {
+    return (dataURL && dataURL.indexOf('image/png') !== -1) ? 'PNG' : 'JPEG';
 }
 
 function formatarData(val) {
@@ -768,16 +774,34 @@ document.addEventListener('DOMContentLoaded', () => {
    ══════════════════════════════════════════════════════════════════════ */
 let modelosPorCertificado = {}; // cache em memória: { NR10: { frente, verso } }
 
+// Chave própria por certificado+lado (ex: ssma_modelo_NR10_frente).
+// Assim, salvar um modelo novo NÃO precisa reler/reescrever os outros já salvos —
+// é isso que deixa a importação de PDF e a troca de módulo mais rápida e leve.
+function chaveModeloLocal(curso, tipo) {
+    return 'ssma_modelo_' + curso.replace(/\s+/g, '_') + '_' + tipo;
+}
+
 function salvarModeloPDFLocal(curso, tipo, dataURL) {
     try {
-        const local = JSON.parse(localStorage.getItem('ssma_modelos') || '{}');
-        local[curso] = local[curso] || {};
-        local[curso][tipo] = dataURL;
-        localStorage.setItem('ssma_modelos', JSON.stringify(local));
+        localStorage.setItem(chaveModeloLocal(curso, tipo), dataURL);
     } catch (err) {
         console.warn('Não foi possível salvar o modelo localmente (PDF muito grande para o navegador).', err);
         showToast('Modelo salvo só nesta sessão (arquivo grande demais para o navegador).', 'erro');
     }
+}
+
+function carregarModeloPDFLocal(curso, tipo) {
+    try {
+        const direto = localStorage.getItem(chaveModeloLocal(curso, tipo));
+        if (direto) return direto;
+    } catch (err) { /* segue para formato antigo abaixo */ }
+    // Compatibilidade com a versão anterior, que salvava tudo num único JSON
+    // (chave "ssma_modelos"). Se achar algo lá, continua funcionando normalmente.
+    try {
+        const antigo = JSON.parse(localStorage.getItem('ssma_modelos') || '{}');
+        if (antigo[curso] && antigo[curso][tipo]) return antigo[curso][tipo];
+    } catch (err) { /* nada salvo */ }
+    return null;
 }
 
 async function salvarModeloPDF(curso, tipo, dataURL) {
@@ -811,10 +835,11 @@ async function carregarModeloPDF(curso) {
         } catch (err) { /* cai para localStorage abaixo */ }
     }
 
-    const local = JSON.parse(localStorage.getItem('ssma_modelos') || '{}');
-    if (local[curso]) {
-        modelosPorCertificado[curso] = local[curso];
-        return local[curso];
+    const frente = carregarModeloPDFLocal(curso, 'frente');
+    const verso  = carregarModeloPDFLocal(curso, 'verso');
+    if (frente || verso) {
+        modelosPorCertificado[curso] = { frente, verso };
+        return modelosPorCertificado[curso];
     }
     return null;
 }
@@ -834,3 +859,96 @@ async function aplicarModeloCertificadoAtivo(curso) {
     if (dotFrente) dotFrente.classList.toggle('loaded', !!imgFrente);
     if (dotVerso)  dotVerso.classList.toggle('loaded', !!imgVerso);
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   GUIA "COMO USAR" (NOVO — não altera nada existente)
+   Cria um botão no topo da plataforma que abre um modal com o passo a
+   passo de uso, para quem está acessando o sistema por primeira vez.
+   Tudo é montado em runtime via JS, sem precisar editar o HTML/CSS.
+   ══════════════════════════════════════════════════════════════════════ */
+function criarBotaoAjuda() {
+    if (document.getElementById('btnAjuda')) return; // evita duplicar se já existir
+    const topbarRight = document.querySelector('.topbar-right');
+    if (!topbarRight) return;
+
+    const btn = document.createElement('button');
+    btn.id = 'btnAjuda';
+    btn.className = 'tb-btn';
+    btn.type = 'button';
+    btn.innerHTML = '<i class="ri-question-line"></i> Como Usar';
+    btn.onclick = abrirModalAjuda;
+
+    const sairBtn = topbarRight.querySelector('.tb-btn-red');
+    if (sairBtn) topbarRight.insertBefore(btn, sairBtn);
+    else topbarRight.appendChild(btn);
+}
+
+function abrirModalAjuda() {
+    if (document.getElementById('ssma-help-overlay')) return; // já está aberto
+
+    const passos = [
+        { titulo: '1. Entrar',
+          texto: 'Acesse com seu e-mail e senha de operador. Ainda não tem conta? Use a aba "Criar Conta" na tela de login.' },
+        { titulo: '2. Escolher o módulo',
+          texto: 'Na barra lateral, em "Módulos de Treinamento", clique no certificado que vai trabalhar (NR10, NR20, Direção, etc).' },
+        { titulo: '3. Carregar o modelo em PDF',
+          texto: 'Em "Vetores de Background", suba o PDF de Frente e o de Verso. Isso é salvo automaticamente para aquele módulo — só precisa fazer uma vez.' },
+        { titulo: '4. Ajustar a posição dos campos',
+          texto: 'Em "Engenharia de Eixos", use os controles deslizantes para posicionar Nome, CPF e Data no lugar certo. Os ajustes salvam sozinhos.' },
+        { titulo: '5. Vincular a planilha',
+          texto: 'Clique em "Vincular Dataset .XLSX" e selecione a planilha com os dados dos alunos (nome, CPF, data).' },
+        { titulo: '6. Gerar o lote',
+          texto: 'Clique em "EXECUTAR COMPILAÇÃO MASTER EM LOTE" para gerar um único PDF com todos os certificados, frente e verso, prontos para imprimir.' },
+        { titulo: '7. Administração (se você for admin)',
+          texto: 'No botão "Operadores", você pode adicionar/remover colaboradores e exportar/importar as configurações da equipe.' }
+    ];
+
+    const overlay = document.createElement('div');
+    overlay.id = 'ssma-help-overlay';
+    overlay.style.cssText = [
+        'position:fixed', 'inset:0', 'background:rgba(0,0,0,.65)',
+        'backdrop-filter:blur(4px)', 'z-index:10000',
+        'display:flex', 'align-items:center', 'justify-content:center',
+        'padding:24px', 'animation:toastIn .2s ease'
+    ].join(';');
+    overlay.onclick = (e) => { if (e.target === overlay) fecharModalAjuda(); };
+
+    const card = document.createElement('div');
+    card.style.cssText = [
+        'background:var(--s2,#16181d)', 'border:1px solid var(--b2,#2a2d35)',
+        'border-radius:16px', 'max-width:560px', 'width:100%', 'max-height:84vh',
+        'overflow-y:auto', 'padding:28px', 'box-shadow:0 24px 64px rgba(0,0,0,.5)',
+        'font-family:var(--font-mono, monospace)', 'color:var(--t1,#fff)'
+    ].join(';');
+
+    let html = '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;gap:12px;">';
+    html += '<div><h2 style="margin:0 0 4px;font-family:var(--font-display, sans-serif);font-size:20px;">Como Usar a Plataforma</h2>';
+    html += '<p style="margin:0;font-size:12px;color:var(--t3,#888);">Passo a passo para gerar certificados em lote</p></div>';
+    html += '<button id="ssma-help-close" type="button" style="background:transparent;border:none;color:var(--t2,#ccc);font-size:22px;cursor:pointer;line-height:1;padding:4px;flex-shrink:0;">×</button></div>';
+
+    passos.forEach(p => {
+        html += '<div style="margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--b1,#222);">';
+        html += '<div style="font-weight:700;font-size:13px;margin-bottom:4px;color:var(--amber,#f5a623);">' + p.titulo + '</div>';
+        html += '<div style="font-size:13px;line-height:1.5;color:var(--t2,#ccc);">' + p.texto + '</div>';
+        html += '</div>';
+    });
+
+    card.innerHTML = html;
+    overlay.appendChild(card);
+    document.body.appendChild(overlay);
+
+    document.getElementById('ssma-help-close').onclick = fecharModalAjuda;
+    document.addEventListener('keydown', fecharModalAjudaEsc);
+}
+
+function fecharModalAjudaEsc(e) {
+    if (e.key === 'Escape') fecharModalAjuda();
+}
+
+function fecharModalAjuda() {
+    const overlay = document.getElementById('ssma-help-overlay');
+    if (overlay) overlay.remove();
+    document.removeEventListener('keydown', fecharModalAjudaEsc);
+}
+
+document.addEventListener('DOMContentLoaded', criarBotaoAjuda);
