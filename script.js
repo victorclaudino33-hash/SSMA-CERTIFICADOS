@@ -896,7 +896,7 @@ function abrirModalAjuda() {
         { titulo: '4. Ajustar a posição dos campos',
           texto: 'Em "Engenharia de Eixos", use os controles deslizantes para posicionar Nome, CPF e Data no lugar certo. Os ajustes salvam sozinhos.' },
         { titulo: '5. Vincular a planilha',
-          texto: 'Clique em "Vincular Dataset .XLSX" e selecione a planilha com os dados dos alunos (nome, CPF, data).' },
+          texto: 'Clique em "Vincular Dataset .XLSX" e selecione a planilha com os dados dos alunos (nome, CPF, data). Veja a estrutura exigida e baixe um modelo logo abaixo ⬇' },
         { titulo: '6. Gerar o lote',
           texto: 'Clique em "EXECUTAR COMPILAÇÃO MASTER EM LOTE" para gerar um único PDF com todos os certificados, frente e verso, prontos para imprimir.' },
         { titulo: '7. Administração (se você for admin)',
@@ -933,11 +933,48 @@ function abrirModalAjuda() {
         html += '</div>';
     });
 
+    // Bloco extra: estrutura exigida da planilha .xlsx (gerado a partir dos módulos reais do sistema)
+    html += '<div style="margin-top:4px;padding:14px;border:1px solid var(--b2,#2a2d35);border-radius:10px;">';
+    html += '<div style="font-weight:700;font-size:13px;margin-bottom:8px;color:var(--blue-bright,#4da3ff);">📊 Estrutura da planilha (.xlsx)</div>';
+    html += '<div style="font-size:12.5px;line-height:1.6;color:var(--t2,#ccc);margin-bottom:10px;">';
+    html += 'Use <b>uma única planilha</b> para todos os alunos e todos os módulos. As colunas devem ser:<br>';
+    html += '• <b>Nome</b> — nome completo do aluno<br>';
+    html += '• <b>CPF</b> — CPF do aluno<br>';
+    html += '• <b>Uma coluna para cada certificado</b>, com o nome EXATAMENTE igual ao módulo (' + slotsCursos.join(', ') + '). Preencha com a data do treinamento <b>só na coluna do certificado que o aluno concluiu</b> — deixe as outras colunas em branco.<br>';
+    html += 'Ao gerar o lote, o sistema busca a data automaticamente na coluna do módulo selecionado naquele momento.';
+    html += '</div>';
+
+    html += '<div style="overflow-x:auto;margin-bottom:12px;">';
+    html += '<table style="width:100%;border-collapse:collapse;font-size:11px;">';
+    html += '<tr style="background:var(--s1,#0d0f13);">';
+    ['Nome', 'CPF', slotsCursos[0], slotsCursos[2] || slotsCursos[1] || slotsCursos[0]].forEach(col => {
+        html += '<th style="border:1px solid var(--b2,#2a2d35);padding:6px;text-align:left;color:var(--t1,#fff);">' + col + '</th>';
+    });
+    html += '</tr>';
+    html += '<tr>' +
+        '<td style="border:1px solid var(--b2,#2a2d35);padding:6px;">João da Silva</td>' +
+        '<td style="border:1px solid var(--b2,#2a2d35);padding:6px;">000.000.000-00</td>' +
+        '<td style="border:1px solid var(--b2,#2a2d35);padding:6px;">22/05/2026</td>' +
+        '<td style="border:1px solid var(--b2,#2a2d35);padding:6px;"></td>' +
+        '</tr>';
+    html += '<tr>' +
+        '<td style="border:1px solid var(--b2,#2a2d35);padding:6px;">Maria Souza</td>' +
+        '<td style="border:1px solid var(--b2,#2a2d35);padding:6px;">111.111.111-11</td>' +
+        '<td style="border:1px solid var(--b2,#2a2d35);padding:6px;"></td>' +
+        '<td style="border:1px solid var(--b2,#2a2d35);padding:6px;">22/05/2026</td>' +
+        '</tr>';
+    html += '</table></div>';
+
+    html += '<button id="ssma-help-download-template" type="button" style="background:var(--blue-bright,#4da3ff);border:none;color:#0a0a0a;font-weight:700;font-size:12px;padding:8px 14px;border-radius:8px;cursor:pointer;">📥 Baixar planilha modelo (.xlsx)</button>';
+    html += '</div>';
+
     card.innerHTML = html;
     overlay.appendChild(card);
     document.body.appendChild(overlay);
 
     document.getElementById('ssma-help-close').onclick = fecharModalAjuda;
+    const btnDownloadTemplate = document.getElementById('ssma-help-download-template');
+    if (btnDownloadTemplate) btnDownloadTemplate.onclick = baixarPlanilhaModelo;
     document.addEventListener('keydown', fecharModalAjudaEsc);
 }
 
@@ -949,6 +986,29 @@ function fecharModalAjuda() {
     const overlay = document.getElementById('ssma-help-overlay');
     if (overlay) overlay.remove();
     document.removeEventListener('keydown', fecharModalAjudaEsc);
+}
+
+// Gera uma planilha .xlsx modelo com Nome, CPF e uma coluna pra cada
+// módulo cadastrado (slotsCursos), já com exemplos de preenchimento.
+function baixarPlanilhaModelo() {
+    if (typeof XLSX === 'undefined') {
+        showToast('Biblioteca de planilha (XLSX) não carregada.', 'erro');
+        return;
+    }
+    const linhaVazia = { Nome: '', CPF: '' };
+    slotsCursos.forEach(c => { linhaVazia[c] = ''; });
+
+    const exemplo1 = Object.assign({}, linhaVazia, { Nome: 'João da Silva', CPF: '000.000.000-00' });
+    exemplo1[slotsCursos[0]] = '22/05/2026';
+
+    const exemplo2 = Object.assign({}, linhaVazia, { Nome: 'Maria Souza', CPF: '111.111.111-11' });
+    exemplo2[slotsCursos[2] || slotsCursos[0]] = '22/05/2026';
+
+    const ws = XLSX.utils.json_to_sheet([exemplo1, exemplo2]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Alunos');
+    XLSX.writeFile(wb, 'planilha_modelo_ssma.xlsx');
+    showToast('Planilha modelo baixada!', 'ok');
 }
 
 document.addEventListener('DOMContentLoaded', criarBotaoAjuda);
