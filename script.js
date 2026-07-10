@@ -476,6 +476,8 @@ function inicializarSlots() {
         s + '</button>'
     ).join('');
     document.getElementById('topbarCourse').textContent = slotAtivo;
+    const labelModulo = document.getElementById('labelModuloAtivo');
+    if (labelModulo) labelModulo.textContent = slotAtivo;
 }
 
 async function selecionarSlot(s, btn) {
@@ -488,6 +490,8 @@ async function selecionarSlot(s, btn) {
     btn.classList.add('active');
     btn.setAttribute('aria-checked', 'true');
     document.getElementById('topbarCourse').textContent = s;
+    const labelModulo = document.getElementById('labelModuloAtivo');
+    if (labelModulo) labelModulo.textContent = s;
     await carregarConfigSliders(slotAtivo);
     await aplicarModeloCertificadoAtivo(slotAtivo);
     ajusteReal();
@@ -631,6 +635,17 @@ async function gerarLoteCompleto() {
     if (barFill) barFill.style.width = '0%';
     
     await salvarConfigSliders(slotAtivo);
+
+    // Considera apenas quem tem a coluna do módulo ativo preenchida na planilha
+    // (assim o lote "por módulo" não inclui gente que não fez esse curso).
+    const registrosDoModulo = dadosExcel.filter(p => {
+        const v = p[slotAtivo];
+        return v !== undefined && v !== null && String(v).trim() !== '';
+    });
+
+    if (registrosDoModulo.length === 0) {
+        return showToast('Nenhum colaborador da planilha tem a coluna "' + slotAtivo + '" preenchida.', 'erro');
+    }
     
     const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
     const yn  = parseFloat(document.getElementById('range_y_nome').value);
@@ -640,12 +655,12 @@ async function gerarLoteCompleto() {
     const yd  = parseFloat(document.getElementById('range_y_data').value);
     const sd  = parseFloat(document.getElementById('range_s_data').value);
     
-    for (let i = 0; i < dadosExcel.length; i++) {
+    for (let i = 0; i < registrosDoModulo.length; i++) {
         if (i > 0) doc.addPage();
         doc.addImage(imgFrente, formatoImagem(imgFrente), 0, 0, 297, 210);
         doc.setTextColor(0, 0, 0);
         
-        const p    = dadosExcel[i];
+        const p    = registrosDoModulo[i];
         const nome = buscarNaPlanilha(p, 'nome');
         const cpf  = buscarNaPlanilha(p, 'cpf');
         const data = p[slotAtivo] || buscarNaPlanilha(p, 'data');
@@ -662,7 +677,7 @@ async function gerarLoteCompleto() {
         doc.addPage();
         doc.addImage(imgVerso, formatoImagem(imgVerso), 0, 0, 297, 210);
         
-        const pct = Math.round(((i + 1) / dadosExcel.length) * 100);
+        const pct = Math.round(((i + 1) / registrosDoModulo.length) * 100);
         if (pctMsg) pctMsg.innerText = pct + '%';
         if (barFill) barFill.style.width = pct + '%';
         await new Promise(r => setTimeout(r, 5));
@@ -670,7 +685,141 @@ async function gerarLoteCompleto() {
     
     doc.save('LOTE_MASTER_SSMA_' + slotAtivo.replace(/\s+/g, '_') + '.pdf');
     if (pctMsg) pctMsg.innerText = 'COMPILADO ✓';
-    showToast('Lote de ' + dadosExcel.length + ' certificados gerado!', 'ok');
+    showToast('Lote de ' + registrosDoModulo.length + ' certificados de ' + slotAtivo + ' gerado!', 'ok');
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   LOTE POR COLABORADOR (NOVO)
+   Gera um pacote .zip contendo um PDF separado para CADA módulo que o
+   colaborador selecionado tiver concluído na planilha (coluna preenchida),
+   usando o modelo de PDF e a configuração de sliders já salvos de CADA
+   módulo — sem depender do módulo que está aberto na tela no momento.
+   Cada PDF dentro do zip já sai renomeado como "<CURSO> - <NOME>.pdf".
+   ══════════════════════════════════════════════════════════════════════ */
+function popularSelectColaboradores() {
+    const sel = document.getElementById('selectColaborador');
+    if (!sel) return;
+    if (dadosExcel.length === 0) {
+        sel.innerHTML = '<option value="">— Vincule a planilha para listar os colaboradores —</option>';
+        return;
+    }
+    sel.innerHTML = '<option value="">— Selecione um colaborador —</option>' +
+        dadosExcel.map((row, i) => {
+            const nome = buscarNaPlanilha(row, 'nome') || ('Registro ' + (i + 1));
+            return '<option value="' + i + '">' + String(nome).toUpperCase() + '</option>';
+        }).join('');
+}
+
+// Igual a carregarConfigSliders, mas RETORNA a config em vez de aplicar nos
+// sliders da tela — necessário aqui porque o lote por colaborador percorre
+// vários módulos de uma vez, sem trocar o módulo ativo visualmente.
+async function obterConfigSliders(curso) {
+    if (firebaseReady && db) {
+        try {
+            const snap = await db.collection('configuracoes').doc('sliders').get();
+            if (snap.exists && snap.data()[curso]) return snap.data()[curso];
+        } catch (err) { /* cai para localStorage abaixo */ }
+    }
+    const local = JSON.parse(localStorage.getItem('ssma_sliders') || '{}');
+    if (local[curso]) return local[curso];
+    return sliderDefaults;
+}
+
+function sanitizarNomeArquivo(txt) {
+    return String(txt)
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/[\/\\:*?"<>|]/g, '')
+        .trim();
+}
+
+async function gerarLoteColaborador() {
+    const sel = document.getElementById('selectColaborador');
+    if (!sel || sel.value === '') return showToast('Selecione um colaborador antes!', 'erro');
+    if (dadosExcel.length === 0)  return showToast('Vincule uma planilha Excel antes!', 'erro');
+    if (typeof JSZip === 'undefined') return showToast('Biblioteca de compactação (JSZip) não carregada.', 'erro');
+
+    const row  = dadosExcel[+sel.value];
+    const nome = buscarNaPlanilha(row, 'nome') || 'Colaborador';
+    const cpf  = buscarNaPlanilha(row, 'cpf')  || '';
+
+    // Garante que ajustes recentes do módulo aberto na tela sejam salvos
+    // antes de ler a configuração de todos os módulos.
+    await salvarConfigSliders(slotAtivo);
+
+    const cursosDoColaborador = slotsCursos.filter(c => {
+        const v = row[c];
+        return v !== undefined && v !== null && String(v).trim() !== '';
+    });
+
+    if (cursosDoColaborador.length === 0) {
+        return showToast('Nenhuma coluna de módulo preenchida para ' + nome + ' na planilha.', 'erro');
+    }
+
+    const barFill   = document.getElementById('progressBarFill');
+    const pctMsg    = document.getElementById('progressMsg');
+    const statusColab = document.getElementById('statusColab');
+    if (pctMsg) pctMsg.innerText = '0%';
+    if (barFill) barFill.style.width = '0%';
+    if (statusColab) statusColab.innerText = 'COMPILANDO LOTE DE ' + String(nome).toUpperCase() + '...';
+
+    const zip = new JSZip();
+    let gerados = 0;
+
+    for (let i = 0; i < cursosDoColaborador.length; i++) {
+        const curso  = cursosDoColaborador[i];
+        const modelo = await carregarModeloPDF(curso);
+
+        if (!modelo || !modelo.frente || !modelo.verso) {
+            showToast('Módulo ' + curso + ' sem PDF de frente/verso cadastrado — pulado.', 'info');
+            continue;
+        }
+
+        const cfg = await obterConfigSliders(curso);
+
+        const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+        doc.addImage(modelo.frente, formatoImagem(modelo.frente), 0, 0, 297, 210);
+        doc.setTextColor(0, 0, 0);
+
+        doc.setFont('Helvetica', 'bold');
+        doc.setFontSize(parseFloat(cfg.sn ?? sliderDefaults.sn));
+        doc.text(String(nome).toUpperCase(), 148.5, parseFloat(cfg.yn ?? sliderDefaults.yn), { align: 'center' });
+        doc.setFont('Helvetica', 'normal');
+        doc.setFontSize(parseFloat(cfg.sc ?? sliderDefaults.sc));
+        doc.text('CPF: ' + cpf, 148.5, parseFloat(cfg.yc ?? sliderDefaults.yc), { align: 'center' });
+        doc.setFontSize(parseFloat(cfg.sd ?? sliderDefaults.sd));
+        doc.text('Data: ' + formatarData(row[curso] || buscarNaPlanilha(row, 'data')), 148.5, parseFloat(cfg.yd ?? sliderDefaults.yd), { align: 'center' });
+
+        doc.addPage();
+        doc.addImage(modelo.verso, formatoImagem(modelo.verso), 0, 0, 297, 210);
+
+        const nomeArquivo = sanitizarNomeArquivo(curso + ' - ' + nome) + '.pdf';
+        zip.file(nomeArquivo, doc.output('blob'));
+        gerados++;
+
+        const pct = Math.round(((i + 1) / cursosDoColaborador.length) * 100);
+        if (pctMsg) pctMsg.innerText = pct + '%';
+        if (barFill) barFill.style.width = pct + '%';
+        await new Promise(r => setTimeout(r, 5));
+    }
+
+    if (gerados === 0) {
+        if (statusColab) statusColab.innerText = 'NENHUM CERTIFICADO GERADO';
+        return showToast('Nenhum certificado pôde ser gerado (faltam PDFs de frente/verso desses módulos).', 'erro');
+    }
+
+    const zipBlob = await zip.generateAsync({ type: 'blob' });
+    const url = URL.createObjectURL(zipBlob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'LOTE_' + sanitizarNomeArquivo(nome) + '.zip';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+
+    if (pctMsg) pctMsg.innerText = 'COMPILADO ✓';
+    if (statusColab) statusColab.innerText = gerados + ' CERTIFICADO(S) DE ' + String(nome).toUpperCase();
+    showToast('Lote de ' + gerados + ' certificado(s) de ' + nome + ' gerado!', 'ok');
 }
 
 /* ══════════════════════════════════════════════════════════════════════
@@ -727,6 +876,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('psbDetails').innerText     = dadosExcel.length + ' registros prontos. Primeiro: ' +
                     (buscarNaPlanilha(dadosExcel[0], 'nome') || '—');
                 ajusteReal();
+                popularSelectColaboradores();
                 showToast(dadosExcel.length + ' registros carregados!', 'ok');
             };
             reader.readAsArrayBuffer(e.target.files[0]);
