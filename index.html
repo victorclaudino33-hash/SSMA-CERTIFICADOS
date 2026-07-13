@@ -1,5 +1,10 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
+    <head>
+     <meta charset="UTF-8">
+     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SSMA CONTROL PLATFORM</title>
+    <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -17,18 +22,16 @@
     <!-- Custom CSS -->
     <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
 
     <!-- ========================================== -->
-    <!-- LOGIN SCREEN                              -->
+    <!-- VIEW: LOGIN SCREEN                         -->
     <!-- ========================================== -->
     <section id="loginSection">
         <div class="login-noise"></div>
         
         <div class="login-container">
-            
-            <!-- LEFT: Brand Panel -->
+            <!-- Left Brand -->
             <div class="login-left">
                 <div class="login-brand-top">
                     <div class="brand-logo-mark">S</div>
@@ -63,30 +66,21 @@
                 </div>
             </div>
 
-            <!-- RIGHT: Form Panel -->
+            <!-- Right Form -->
             <div class="login-right">
                 <div class="login-form-inner">
-                    
-                    <!-- Auth Tab Switcher -->
-                    <div class="auth-tabs-container">
-                        <div class="auth-tabs">
-                            <button type="button" class="auth-tab active" id="tabLogin" data-tab="login">
-                                Entrar
-                            </button>
-                            <button type="button" class="auth-tab" id="tabRegister" data-tab="register">
-                                Criar Conta
-                            </button>
-                            <div class="auth-tab-indicator" id="tabIndicator"></div>
-                        </div>
+                    <div class="auth-tabs">
+                        <div class="auth-tab-indicator" id="tabIndicator"></div>
+                        <button type="button" class="auth-tab active" id="tabLogin" onclick="switchAuthTab('login')">Entrar</button>
+                        <button type="button" class="auth-tab" id="tabRegister" onclick="switchAuthTab('register')">Criar Conta</button>
                     </div>
 
-                    <!-- LOGIN FORM -->
-                    <form id="formLogin" class="auth-form active" onsubmit="return false;">
+                    <!-- Login Form -->
+                    <form id="formLogin" class="auth-form" onsubmit="return false;">
                         <div class="form-header">
                             <h2>Bem-vindo de volta</h2>
                             <p>Acesse sua conta de operador</p>
                         </div>
-
                         <div class="field-group">
                             <label class="field-label">E-mail</label>
                             <div class="field-wrap">
@@ -94,7 +88,6 @@
                                 <input type="email" id="loginEmail" class="field" placeholder="nome@empresa.com" autocomplete="email">
                             </div>
                         </div>
-
                         <div class="field-group">
                             <label class="field-label">Senha</label>
                             <div class="field-wrap">
@@ -105,21 +98,18 @@
                                 </button>
                             </div>
                         </div>
-
                         <button type="button" id="btnLogin" class="btn-primary" onclick="fazerLogin()">
                             ACESSAR CONSOLE
                         </button>
-
                         <div id="loginError" class="auth-error hidden"></div>
                     </form>
 
-                    <!-- REGISTER FORM -->
-                    <form id="formRegister" class="auth-form" onsubmit="return false;">
+                    <!-- Register Form -->
+                    <form id="formRegister" class="auth-form hidden" onsubmit="return false;">
                         <div class="form-header">
                             <h2>Criar Conta</h2>
                             <p>Cadastre um novo operador no sistema</p>
                         </div>
-
                         <div class="field-group">
                             <label class="field-label">Nome de Exibição</label>
                             <div class="field-wrap">
@@ -127,7 +117,6 @@
                                 <input type="text" id="regName" class="field" placeholder="João da Silva" autocomplete="name">
                             </div>
                         </div>
-
                         <div class="field-group">
                             <label class="field-label">E-mail</label>
                             <div class="field-wrap">
@@ -135,7 +124,6 @@
                                 <input type="email" id="regEmail" class="field" placeholder="nome@empresa.com" autocomplete="email">
                             </div>
                         </div>
-
                         <div class="field-group">
                             <label class="field-label">Senha (mínimo 6 caracteres)</label>
                             <div class="field-wrap">
@@ -146,81 +134,138 @@
                                 </button>
                             </div>
                         </div>
-
                         <button type="button" id="btnRegister" class="btn-primary" onclick="fazerRegistro()">
                             CRIAR OPERADOR
                         </button>
-
                         <div id="regError" class="auth-error hidden"></div>
                     </form>
-
                 </div>
             </div>
-
         </div>
     </section>
 
     <!-- ========================================== -->
-    <!-- MAIN DASHBOARD (Hidden until login)       -->
+    <!-- VIEW: MAIN DASHBOARD                       -->
     <!-- ========================================== -->
-    <div id="dashSection" class="dashboard hidden">
-        <div id="connectionStatus" class="conn-status conn-offline">
-            <span class="conn-dot"></span>
-            <span class="conn-text">MODO DEMO</span>
+    <div id="mainInterface" class="hidden">
+        
+        <!-- Admin Panel (Collapsible) -->
+        <div id="adminPanel" class="admin-panel hidden">
+            <div class="admin-panel-inner">
+                <div class="admin-panel-header">
+                    <div>
+                        <h3>Gestão de Operadores</h3>
+                        <p>Gerencie contas de acesso ao sistema via Firebase</p>
+                    </div>
+                    <div class="admin-panel-actions">
+                        <button class="btn-primary btn-sm" onclick="adicionarColaborador()">+ Adicionar</button>
+                        <button class="btn-primary btn-sm" style="background:var(--s2);border:1px solid var(--b2);color:var(--t2);" onclick="exportarDadosSistema()">📥 Exportar</button>
+                        <label class="btn-primary btn-sm" style="background:var(--s2);border:1px solid var(--b2);color:var(--t2);cursor:pointer;margin:0;">
+                            📤 Importar
+                            <input type="file" accept=".json" onchange="importarDadosSistema(this)" style="display:none;">
+                        </label>
+                        <button class="btn-primary btn-sm" onclick="toggleAdminPanel()">✕ Fechar</button>
+                    </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:24px;">
+                    <div>
+                         <h4 style="font-size:11px; font-weight:700; margin-bottom:8px; color:var(--t3); text-transform:uppercase;">Novo Operador</h4>
+                         <input type="text" id="newUserName" class="field" placeholder="Nome" style="margin-bottom:8px;">
+                         <input type="email" id="newUserEmail" class="field" placeholder="E-mail" style="margin-bottom:8px;">
+                         <input type="password" id="newUserPass" class="field" placeholder="Senha Provisória" style="margin-bottom:8px;">
+                    </div>
+                    <div>
+                        <div id="listaEquipe" class="team-list" style="padding-top:4px;"></div>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <!-- Sidebar Controls -->
-        <aside class="sidebar">
-            <div class="sidebar-header">
-                <div class="sidebar-title">
-                    <i class="ri-settings-4-line"></i>
-                    CONFIGURAÇÃO DE TEMPLATE
+        <!-- Topbar -->
+        <header class="topbar">
+            <div class="topbar-left">
+                <div class="topbar-logo">SSMA<span>.</span></div>
+                <div class="topbar-divider"></div>
+                <div class="topbar-course">
+                    <span id="topbarCourse">NENHUM MÓDULO</span>
                 </div>
-                <button type="button" class="btn-logout" onclick="fazerLogout()">
-                    <i class="ri-logout-box-line"></i>
-                </button>
             </div>
+            
+            <div class="topbar-center">
+                <div id="connectionStatus" class="conn-status conn-offline">
+                    <span class="conn-dot"></span>
+                    <span class="conn-text">OFFLINE</span>
+                </div>
+            </div>
+            
+            <div class="topbar-right">
+                <button id="adminBtn" class="tb-btn hidden" onclick="toggleAdminPanel()">
+                    <i class="ri-group-line"></i> Operadores
+                </button>
+                <button class="tb-btn tb-btn-red" onclick="fazerLogout()">
+                    <i class="ri-logout-box-r-line"></i> Sair
+                </button>
+                <div class="user-badge">
+                    <div id="userAvatar" class="user-avatar">?</div>
+                    <span id="userBadgeText">Carregando...</span>
+                </div>
+            </div>
+        </header>
 
-            <div class="sidebar-content">
-                <!-- Course Selector -->
-                <div class="sidebar-section">
-                    <label class="section-label">Selecione o Módulo</label>
-                    <select id="selectCurso" class="field" onchange="mudarCurso()">
-                        <option value="NR10">NR10</option>
-                        <option value="NR10 SEP">NR10 SEP</option>
-                        <option value="NR20">NR20</option>
-                        <option value="NR06">NR06</option>
-                        <option value="NR35">NR35</option>
-                        <option value="NR33">NR33</option>
-                        <option value="SGA">SGA</option>
-                        <option value="DIRECAO">DIRECAO</option>
-                    </select>
+        <!-- App Body -->
+        <div class="app-body">
+            
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <!-- Section 01: Modules -->
+                <div class="sb-section">
+                    <div class="sb-section-label">
+                        <span class="sb-num">01</span>
+                        <span>Módulos de Treinamento</span>
+                    </div>
+                    <div id="slotContainer" class="course-grid">
+                        <!-- JS injects buttons here -->
+                    </div>
                 </div>
 
-                <!-- PDF Upload for Front -->
-                <div class="sidebar-section">
-                    <label class="section-label">PDF Frente</label>
-                    <label class="btn-file">
-                        <i class="ri-upload-2-line"></i> Carregar PDF
-                        <input id="pdfFrente" type="file" accept=".pdf" onchange="carregarPdfFrente()" style="display:none;">
+                <!-- Section 02: PDFs -->
+                <div class="sb-section">
+                    <div class="sb-section-label">
+                        <span class="sb-num">02</span>
+                        <span>Vetores de Background</span>
+                    </div>
+                    <label class="pdf-upload-card">
+                        <input type="file" accept=".pdf" onchange="processarPDF(this, 'frente')" style="display:none;">
+                        <div class="pdf-card-left">
+                            <span class="pdf-card-icon">📄</span>
+                            <div>
+                                <div class="pdf-card-name">Matriz Frente</div>
+                                <div id="statusFrente" class="pdf-card-status">AGUARDANDO PDF</div>
+                            </div>
+                        </div>
+                        <span id="dotFrente" class="pdf-dot"></span>
                     </label>
-                    <div id="statusFrente" style="font-size:11px; color:var(--t3); margin-top:8px;">Nenhum arquivo</div>
-                </div>
-
-                <!-- PDF Upload for Back -->
-                <div class="sidebar-section">
-                    <label class="section-label">PDF Verso</label>
-                    <label class="btn-file">
-                        <i class="ri-upload-2-line"></i> Carregar PDF
-                        <input id="pdfVerso" type="file" accept=".pdf" onchange="carregarPdfVerso()" style="display:none;">
+                    <label class="pdf-upload-card">
+                        <input type="file" accept=".pdf" onchange="processarPDF(this, 'verso')" style="display:none;">
+                        <div class="pdf-card-left">
+                            <span class="pdf-card-icon">📄</span>
+                            <div>
+                                <div class="pdf-card-name">Matriz Verso</div>
+                                <div id="statusVerso" class="pdf-card-status">AGUARDANDO PDF</div>
+                            </div>
+                        </div>
+                        <span id="dotVerso" class="pdf-dot"></span>
                     </label>
-                    <div id="statusVerso" style="font-size:11px; color:var(--t3); margin-top:8px;">Nenhum arquivo</div>
                 </div>
 
-                <!-- Sliders for Position Control -->
-                <div class="sidebar-section">
-                    <label class="section-label">Ajustes Posicionais</label>
-
+                <!-- Section 03: Sliders -->
+                <div class="sb-section">
+                    <div class="sb-section-label">
+                        <span class="sb-num">03</span>
+                        <span>Engenharia de Eixos</span>
+                    </div>
+                    
                     <!-- Y Nome -->
                     <div class="slider-card">
                         <div class="slider-row">
@@ -268,98 +313,97 @@
 
                     <button class="btn-save-config" onclick="salvarConfig()">💾 Salvar Configuração</button>
                 </div>
-            </div>
-        </aside>
+            </aside>
 
-        <!-- Main Content Area -->
-        <main class="main-content">
-            
-            <!-- Preview Controls -->
-            <div class="preview-controls">
-                <div class="preview-lens-group">
-                    <button id="btnPrevFrente" class="lens-btn lens-btn-active" onclick="mudarModoPreview('frente')">
-                        <span class="lens-dot lens-dot-a"></span> FRENTE
-                    </button>
-                    <button id="btnPrevVerso" class="lens-btn" onclick="mudarModoPreview('verso')">
-                        <span class="lens-dot lens-dot-b"></span> VERSO
-                    </button>
-                </div>
-                <div class="preview-hud">
-                    <span class="hud-dot"></span> VIEWPORT REALTIME
-                </div>
-            </div>
-
-            <!-- Canvas Area -->
-            <div class="cert-frame">
-                <canvas id="previewCanvas"></canvas>
-                <div id="canvasEmptyMsg" class="canvas-empty-msg">
-                    <span class="empty-icon">📋</span>
-                    <span class="empty-title">Matriz Vetorial não Importada</span>
-                    <span class="empty-sub">Carregue um PDF de Frente ou Verso na sidebar para começar.</span>
-                </div>
-            </div>
-
-            <!-- Info Bar -->
-            <div class="info-bar">
-                <div class="info-bar-left">
-                    <div id="contagemAlunos" class="compile-count" style="font-family:var(--font-mono); color:var(--t3); font-size:10px;">AGUARDANDO DATASET</div>
-                    <div id="psbName" class="info-student-name">—</div>
-                    <div id="psbDetails" class="info-student-detail">Nenhum registro carregado</div>
-                </div>
-                <label class="btn-dataset">
-                    <i class="ri-file-excel-2-line"></i> Vincular Dataset .XLSX
-                    <input id="excelInput" type="file" accept=".xlsx,.xls" style="display:none;">
-                </label>
-            </div>
-
-            <!-- Compile Block: Master Batch -->
-            <div class="compile-block">
-                <div class="compile-status-row">
-                    <div class="compile-status-left">
-                        <span class="compile-label">STATUS DO MOTOR</span>
-                        <span id="statusMsg" class="compile-count">0 REGISTROS</span>
+            <!-- Main Content -->
+            <main class="main-content">
+                
+                <!-- Controls -->
+                <div class="preview-controls">
+                    <div class="preview-lens-group">
+                        <button id="btnPrevFrente" class="lens-btn lens-btn-active" onclick="mudarModoPreview('frente')">
+                            <span class="lens-dot lens-dot-a"></span> FRENTE
+                        </button>
+                        <button id="btnPrevVerso" class="lens-btn" onclick="mudarModoPreview('verso')">
+                            <span class="lens-dot lens-dot-b"></span> VERSO
+                        </button>
                     </div>
-                    <span id="progressMsg" class="compile-pct">0%</span>
-                </div>
-                <div class="prog-track">
-                    <div id="progressBarFill" class="prog-fill"></div>
-                </div>
-                <button class="btn-compile" onclick="gerarLoteCompleto()">
-                    <i class="ri-rocket-2-fill"></i>
-                    EXECUTAR COMPILAÇÃO MASTER EM LOTE (POR MÓDULO)
-                </button>
-                <div style="font-size:10px; color:var(--t3); font-family:var(--font-mono); margin-top:6px; text-align:center;">
-                    Gera um único PDF com todos os colaboradores da planilha para o módulo ativo na sidebar
-                </div>
-            </div>
-
-            <!-- Compile Block: Individual Batch -->
-            <div class="compile-block">
-                <div class="compile-status-row">
-                    <div class="compile-status-left">
-                        <span class="compile-label">LOTE INDIVIDUAL</span>
-                        <span id="statusColab" class="compile-count">SELECIONE UM COLABORADOR</span>
+                    <div class="preview-hud">
+                        <span class="hud-dot"></span> VIEWPORT REALTIME
                     </div>
                 </div>
-                <div style="display:flex; gap:10px; margin-top:10px; flex-wrap:wrap;">
-                    <select id="selectColaborador" class="field" style="flex:1; min-width:220px;">
-                        <option value="">— Vincule a planilha para listar os colaboradores —</option>
-                    </select>
-                </div>
-                <button class="btn-compile" style="margin-top:12px;" onclick="gerarLoteColaborador()">
-                    <i class="ri-user-star-line"></i>
-                    GERAR LOTE DESTE COLABORADOR (TODOS OS CURSOS DELE)
-                </button>
-                <div style="font-size:10px; color:var(--t3); font-family:var(--font-mono); margin-top:6px; text-align:center;">
-                    Gera um pacote .zip só desse colaborador, com um PDF separado para cada curso que ele concluiu na planilha (ex: NR10, NR20, NR35), já nomeado por certificado.
-                </div>
-            </div>
 
-        </main>
+                <!-- Canvas Area -->
+                <div class="cert-frame">
+                    <canvas id="previewCanvas"></canvas>
+                    <div id="canvasEmptyMsg" class="canvas-empty-msg">
+                        <span class="empty-icon">📋</span>
+                        <span class="empty-title">Matriz Vetorial não Importada</span>
+                        <span class="empty-sub">Carregue um PDF de Frente ou Verso na sidebar para começar.</span>
+                    </div>
+                </div>
+
+                <!-- Info Bar -->
+                <div class="info-bar">
+                    <div class="info-bar-left">
+                        <div id="contagemAlunos" class="compile-count" style="font-family:var(--font-mono); color:var(--t3); font-size:10px;">AGUARDANDO DATASET</div>
+                        <div id="psbName" class="info-student-name">—</div>
+                        <div id="psbDetails" class="info-student-detail">Nenhum registro carregado</div>
+                    </div>
+                    <label class="btn-dataset">
+                        <i class="ri-file-excel-2-line"></i> Vincular Dataset .XLSX
+                        <input id="excelInput" type="file" accept=".xlsx,.xls" style="display:none;">
+                    </label>
+                </div>
+
+                <!-- Compile Block -->
+                <div class="compile-block">
+                    <div class="compile-status-row">
+                        <div class="compile-status-left">
+                            <span class="compile-label">STATUS DO MOTOR</span>
+                            <span id="statusMsg" class="compile-count">0 REGISTROS</span>
+                        </div>
+                        <span id="progressMsg" class="compile-pct">0%</span>
+                    </div>
+                    <div class="prog-track">
+                        <div id="progressBarFill" class="prog-fill"></div>
+                    </div>
+                    <button class="btn-compile" onclick="gerarLoteCompleto()">
+                        <i class="ri-rocket-2-fill"></i>
+                        EXECUTAR COMPILAÇÃO MASTER EM LOTE (POR MÓDULO)
+                    </button>
+                    <div style="font-size:10px; color:var(--t3); font-family:var(--font-mono); margin-top:6px; text-align:center;">
+                        Gera um único PDF com todos os colaboradores da planilha para o módulo ativo na sidebar
+                    </div>
+                </div>
+
+                <!-- Compile Block: LOTE POR COLABORADOR (NOVO) -->
+                <div class="compile-block" style="margin-top:16px;">
+                    <div class="compile-status-row">
+                        <div class="compile-status-left">
+                            <span class="compile-label">LOTE INDIVIDUAL</span>
+                            <span id="statusColab" class="compile-count">SELECIONE UM COLABORADOR</span>
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:10px; margin-top:10px; flex-wrap:wrap;">
+                        <select id="selectColaborador" class="field" style="flex:1; min-width:220px;">
+                            <option value="">— Vincule a planilha para listar os colaboradores —</option>
+                        </select>
+                    </div>
+                    <button class="btn-compile" style="margin-top:12px;" onclick="gerarLoteColaborador()">
+                        <i class="ri-user-star-line"></i>
+                        GERAR LOTE DESTE COLABORADOR (TODOS OS CURSOS DELE)
+                    </button>
+                    <div style="font-size:10px; color:var(--t3); font-family:var(--font-mono); margin-top:6px; text-align:center;">
+                        Gera um pacote .zip só desse colaborador, com um PDF separado para cada curso que ele concluiu na planilha (ex: NR10, NR20, NR35), já nomeado por certificado.
+                    </div>
+                </div>
+            </main>
+        </div>
     </div>
 
     <!-- ========================================== -->
-    <!-- EXTERNAL SCRIPTS                          -->
+    <!-- SCRIPTS                                    -->
     <!-- ========================================== -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -371,7 +415,6 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     
-    <!-- App Script -->
     <script src="script.js"></script>
 </body>
 </html>
