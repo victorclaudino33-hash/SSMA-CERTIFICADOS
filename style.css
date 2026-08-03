@@ -653,15 +653,18 @@ body {
 .app-body {
     display: flex;
     flex: 1;
-    overflow: hidden;
+    /* Em vez de "overflow: hidden" (que forçava tudo a se espremer no
+       espaço disponível, deixando o preview minúsculo em zooms altos),
+       deixamos rolar na horizontal quando não couber mais. Assim a
+       sidebar e o preview mantêm o tamanho mínimo correto e nunca
+       ficam desproporcionais um em relação ao outro. */
+    overflow-x: auto;
+    overflow-y: hidden;
 }
 
 /* ── SIDEBAR ───────────────────────────────────────────── */
 .sidebar {
-    /* clamp() em vez de largura fixa: continua com ~300px em telas normais,
-       mas escala de forma suave com o viewport (evita que o zoom do
-       navegador deixe a sidebar desproporcional em relação ao preview) */
-    width: clamp(240px, 22vw, 300px);
+    width: 300px;
     background: var(--s0);
     border-right: 1px solid var(--b2);
     padding: 20px;
@@ -861,12 +864,14 @@ input[type="range"]::-webkit-slider-thumb:hover {
 /* ── MAIN CONTENT ──────────────────────────────────────── */
 .main-content {
     flex: 1;
-    /* min-width: 0 é o pulo do gato aqui: por padrão um item flex tem
-       min-width:auto, o que impede o navegador de encolher esse bloco
-       corretamente. Sem isso, em certos níveis de zoom o preview do
-       certificado "briga" com a sidebar pelo espaço e fica com proporção
-       errada (ora gigante, ora minúsculo). */
-    min-width: 0;
+    /* Este é o ajuste que realmente resolve o problema do zoom: dar um
+       tamanho mínimo de verdade pro preview. Sem isso, o preview era o
+       único elemento "elástico" da tela e sempre acabava pagando o pato
+       quando o zoom reduzia o espaço disponível — encolhendo cada vez
+       mais enquanto a sidebar (largura fixa) parecia "crescer" em
+       comparação. Agora, se não couber mais os 520px mínimos, o
+       .app-body rola na horizontal em vez de espremer o preview. */
+    min-width: 520px;
     background: var(--bg);
     padding: 20px;
     display: flex;
