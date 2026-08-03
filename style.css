@@ -658,7 +658,10 @@ body {
 
 /* ── SIDEBAR ───────────────────────────────────────────── */
 .sidebar {
-    width: 300px;
+    /* clamp() em vez de largura fixa: continua com ~300px em telas normais,
+       mas escala de forma suave com o viewport (evita que o zoom do
+       navegador deixe a sidebar desproporcional em relação ao preview) */
+    width: clamp(240px, 22vw, 300px);
     background: var(--s0);
     border-right: 1px solid var(--b2);
     padding: 20px;
@@ -858,6 +861,12 @@ input[type="range"]::-webkit-slider-thumb:hover {
 /* ── MAIN CONTENT ──────────────────────────────────────── */
 .main-content {
     flex: 1;
+    /* min-width: 0 é o pulo do gato aqui: por padrão um item flex tem
+       min-width:auto, o que impede o navegador de encolher esse bloco
+       corretamente. Sem isso, em certos níveis de zoom o preview do
+       certificado "briga" com a sidebar pelo espaço e fica com proporção
+       errada (ora gigante, ora minúsculo). */
+    min-width: 0;
     background: var(--bg);
     padding: 20px;
     display: flex;
@@ -931,6 +940,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
 /* Certificate Frame */
 .cert-frame {
     flex: 1;
+    min-height: 0; /* mesmo motivo do min-width no .main-content, mas no eixo vertical */
     background: #020609;
     border: 1px solid var(--b2);
     border-radius: var(--r-lg);
