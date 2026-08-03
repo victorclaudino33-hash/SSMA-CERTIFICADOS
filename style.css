@@ -873,10 +873,10 @@ input[type="range"]::-webkit-slider-thumb:hover {
        .app-body rola na horizontal em vez de espremer o preview. */
     min-width: 520px;
     background: var(--bg);
-    padding: 20px;
+    padding: 16px 20px;
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 10px;
     overflow: hidden;
 }
 
@@ -1005,24 +1005,24 @@ input[type="range"]::-webkit-slider-thumb:hover {
 .info-bar {
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 14px;
     background: var(--s1);
     border: 1px solid var(--b2);
     border-radius: var(--r-md);
-    padding: 12px 18px;
+    padding: 8px 14px;
     flex-shrink: 0;
 }
 .info-bar-left {
     flex: 1;
 }
 .info-student-name {
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 700;
     color: var(--t1);
     letter-spacing: .5px;
 }
 .info-student-detail {
-    font-size: 11px;
+    font-size: 10px;
     color: var(--t3);
     margin-top: 2px;
     font-family: var(--font-mono);
@@ -1035,9 +1035,9 @@ input[type="range"]::-webkit-slider-thumb:hover {
     border: 1px solid var(--green-border);
     color: var(--green-bright);
     font-family: var(--font-body);
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 700;
-    padding: 9px 18px;
+    padding: 7px 14px;
     border-radius: var(--r-sm);
     cursor: pointer;
     white-space: nowrap;
@@ -1052,14 +1052,14 @@ input[type="range"]::-webkit-slider-thumb:hover {
     background: var(--s1);
     border: 1px solid var(--b2);
     border-radius: var(--r-md);
-    padding: 16px 18px;
+    padding: 10px 14px;
     flex-shrink: 0;
 }
 .compile-status-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 10px;
+    margin-bottom: 6px;
 }
 .compile-status-left {
     display: flex;
@@ -1067,7 +1067,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
     gap: 8px;
 }
 .compile-label {
-    font-size: 10px;
+    font-size: 9px;
     font-weight: 700;
     color: var(--t3);
     text-transform: uppercase;
@@ -1075,21 +1075,21 @@ input[type="range"]::-webkit-slider-thumb:hover {
 }
 .compile-count {
     font-family: var(--font-mono);
-    font-size: 11px;
+    font-size: 10px;
     color: var(--t2);
 }
 .compile-pct {
     font-family: var(--font-mono);
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 700;
     color: var(--red-bright);
 }
 .prog-track {
     background: var(--s3);
-    height: 4px;
+    height: 3px;
     border-radius: 4px;
     overflow: hidden;
-    margin-bottom: 14px;
+    margin-bottom: 8px;
 }
 .prog-fill {
     background: linear-gradient(90deg, var(--red) 0%, var(--red-bright) 100%);
@@ -1104,10 +1104,10 @@ input[type="range"]::-webkit-slider-thumb:hover {
     background-size: 200% 100%;
     color: white;
     border: none;
-    padding: 14px 20px;
+    padding: 10px 16px;
     border-radius: var(--r-sm);
     font-family: var(--font-body);
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 800;
     letter-spacing: 1px;
     cursor: pointer;
@@ -1124,6 +1124,19 @@ input[type="range"]::-webkit-slider-thumb:hover {
     box-shadow: 0 8px 32px rgba(225,29,72,.35);
 }
 .btn-compile:active { transform: translateY(0); }
+
+/* Texto explicativo abaixo dos botões de compilar — reduzido, sem tirar a info */
+.compile-block div[style*="font-size:10px"] {
+    margin-top: 4px !important;
+}
+
+/* Encolhe o espaçamento entre os dois blocos de compilação (era inline
+   no HTML: margin-top:16px). Com !important porque sobrescreve um
+   estilo inline, só pra deixar mais compacto — não muda a estrutura. */
+.compile-block + .compile-block {
+    margin-top: 10px !important;
+}
+
 
 /* ── TOAST ─────────────────────────────────────────────── */
 @keyframes toastIn {
