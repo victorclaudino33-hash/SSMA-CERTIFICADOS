@@ -1162,3 +1162,44 @@ function baixarPlanilhaModelo() {
 }
 
 document.addEventListener('DOMContentLoaded', criarBotaoAjuda);
+
+/* ══════════════════════════════════════════════════════════════════════
+   MELHORIAS DE UX — v5.1 (NOVO — não altera nada existente)
+   Só "envolve" (wrap) selecionarSlot e processarPDF pra ligar/desligar
+   o efeito visual de carregamento (.is-loading) no frame do certificado.
+   A função original continua rodando exatamente igual, com o mesmo
+   comportamento e retorno — isso aqui só acrescenta feedback visual.
+   Se algo der errado aqui, o site continua funcionando normalmente,
+   pois as chamadas originais são preservadas com try/finally.
+   ══════════════════════════════════════════════════════════════════════ */
+(function () {
+    function setCertFrameLoading(loading) {
+        const frame = document.querySelector('.cert-frame');
+        if (frame) frame.classList.toggle('is-loading', loading);
+    }
+
+    const _selecionarSlotOriginal = window.selecionarSlot;
+    if (typeof _selecionarSlotOriginal === 'function') {
+        window.selecionarSlot = async function (...args) {
+            setCertFrameLoading(true);
+            try {
+                return await _selecionarSlotOriginal.apply(this, args);
+            } finally {
+                setCertFrameLoading(false);
+            }
+        };
+    }
+
+    const _processarPDFOriginal = window.processarPDF;
+    if (typeof _processarPDFOriginal === 'function') {
+        window.processarPDF = function (...args) {
+            setCertFrameLoading(true);
+            const resultado = _processarPDFOriginal.apply(this, args);
+            // A função original já chama ajusteReal() quando o PDF termina
+            // de renderizar; damos uma folga de tempo pra cobrir esse render
+            // antes de tirar o efeito de carregamento.
+            setTimeout(() => setCertFrameLoading(false), 900);
+            return resultado;
+        };
+    }
+})();
